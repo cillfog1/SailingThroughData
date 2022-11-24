@@ -19,7 +19,7 @@
             <ul>
                 <li><a href="#motivation">Motivation</a></li>
                 <li><a href="#dataset">Dataset</a></li>
-                 <li><a href="#methods-intended-experiments">Methods & Intended Experiments</a></li>
+                 <li><a href="#methods--intended-experiments">Methods & Intended Experiments</a></li>
             </ul>
         </li>
         <li><a href="#contributors"><b>Contributors</b></a></li>
