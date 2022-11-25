@@ -1,0 +1,4 @@
+
+preprocess:
+	python preprocessing.py
+
