@@ -26,11 +26,16 @@ def datetime_to_timestamp(csv_files):
     for (filename, columns) in zip(files_to_process, columns_to_process):
         csv_file = csv_files[filename]
         for c in columns:
+            year_label = c + "_year"
+            month_label = c + "_month"
+            date_label = c + "_date"
             for i in range(len(csv_file[c])):
-                column_entry = csv_file[c][i]
-                # Convert datetime to timestamp and replace entry with timestamp
-                date = datetime.strptime(column_entry, '%Y-%m-%d %H:%M:%S')
-                csv_file.loc[(i, c)] = str(int(datetime.timestamp(date)))
+                date = datetime.strptime(csv_file[c][i], '%Y-%m-%d %H:%M:%S')
+                csv_file.loc[(i, year_label)]  = date.strftime('%Y')
+                csv_file.loc[(i, month_label)] = date.strftime('%m')
+                csv_file.loc[(i, date_label)]  = date.strftime('%d')
+
+            csv_file.drop(columns=c, axis='columns', inplace=True)
 
 # Replace string course type with an integer representation.
 def enumerate_course_types(course_csv_file):
@@ -68,6 +73,30 @@ def user_birthdate_to_year(csv_file):
         date = datetime.strptime(dates[i], '%Y-%m-%d')
         csv_file.loc[(i, "user_dob")] = date.strftime("%Y")
         
+# NOTE: After doing the csv file edits, a new index column is added at the from of the files.
+# This removes it from all csv files.
+def strip_files_csv_index():
+    for filename in files_to_process:
+        lines = []
+        new_lines = []
+
+        file = open("../database/processed/"+filename, "r", encoding='utf-8')
+        while True:
+            line = file.readline()
+            if not line:
+                break
+            lines.append(line)
+        file.close()
+
+        for line in lines:
+            new_start = line.find(',') + 1
+            new_lines.append(line[new_start:])
+
+        file = open("../database/processed/"+filename, "w")
+        for line in new_lines:
+            file.write(line)
+        file.close()
+
 
 # Loads CSV files as a dictionary: {filename : csv_file}
 def load_csv_files():
@@ -79,10 +108,10 @@ def load_csv_files():
     return csv_files
 
 def save_csv_files(csv_files):
-    for (filename, location) in zip(files_to_process, files_to_process):
+    for filename in files_to_process:
         file = csv_files[filename]
         file.fillna("NULL")
-        file.to_csv("../database/processed/" + location)
+        file.to_csv("../database/processed/" + filename)
 
 
 if __name__ == "__main__":
@@ -98,4 +127,5 @@ if __name__ == "__main__":
     user_birthdate_to_year(csv_files["users.csv"])
 
     save_csv_files(csv_files)
+    strip_files_csv_index()
 
