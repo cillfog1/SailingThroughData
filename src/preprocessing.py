@@ -39,10 +39,39 @@ def datetime_to_timestamp(csv_files):
 
 # Replace string course type with an integer representation.
 def enumerate_course_types(course_csv_file):
-    course_dictionary = {'Adult Sailing': 0, 'First Aid': 1, 'Powerboating': 2, 'Private Lessons': 3, 'Sailing': 4, 'Try Sail': 5, 'Splash Club': 6}
+    course_type_dictionary = {'Adult Sailing': 0, 'First Aid': 1, 'Powerboating': 2, 'Private Lessons': 3, 'Sailing': 4, 'Try Sail': 5, 'Splash Club': 6}
     for i in range(len(course_csv_file["course_type"])):
         type = course_csv_file["course_type"][i]
-        course_csv_file.loc[(i, "course_type")] = course_dictionary[type]
+        course_csv_file.loc[(i, "course_type")] = course_type_dictionary[type]
+
+# Replace string course level with an integer representation.
+def enumerate_course_levels(course_csv_file):
+    sailing_level_dictionary = {'Taste of Sailing': 0, 'Start Sailing': 1, 'Basic Skills': 2, 'Basic / Improving': 3, 'Improving Skills': 4, 'Five Essentials Workshop': 5, 'Advanced Skills Workshop': 6, 'Improving / Advanced': 7, 'Advanced Boat Handling': 8, 'Blasket Trip': 9, 'Sacred Heart University': 10, 'Pobalscoil Chorca Dhuibhne': 11}
+    powerboating_level_dictionary = {'Introduction to Powerboating': 0, 'National Powerboat Certificate': 1, 'Intermediate Powerboat Certificate': 2, 'Advanced Powerboat Certificate': 3}
+
+    splashClub_level_dictionary = {'': 0, 'Private': 1}
+    firstAid_level_dictionary = {'Basic': 0, 'Basic / Emergency': 1, 'Emergency': 2}
+
+    for i in range(len(course_csv_file["course_level"])):
+        type = course_csv_file["course_type"][i]
+        # Remove trailing zeros
+        level = course_csv_file["course_level"][i].strip()
+
+        # If Adult Sailing or Sailing
+        if (type == 0 or type == 4):
+            course_csv_file.loc[(i, "course_level")] = sailing_level_dictionary[level]
+        # If Powerboating
+        elif (type == 2):
+            course_csv_file.loc[(i, "course_level")] = powerboating_level_dictionary[level]
+        # If First Aid
+        elif (type == 1):
+            course_csv_file.loc[(i, "course_level")] = firstAid_level_dictionary[level]
+        # If Splash Club
+        elif (type == 6):
+            course_csv_file.loc[(i, "course_level")] = splashClub_level_dictionary[level]
+        # Defaukt
+        else:
+            course_csv_file.loc[(i, "course_level")] = 0
 
 # Replace sailing cert with integer representation.
 def enumerate_user_sailing_cert(csv_file):
@@ -120,6 +149,7 @@ if __name__ == "__main__":
     # Process CSV files:
     datetime_to_timestamp(csv_files)
     enumerate_course_types(csv_files["courses.csv"])
+    enumerate_course_levels(csv_files["courses.csv"])
 
     enumerate_user_sailing_cert(csv_files["users.csv"])
     enumerate_user_swimming_ability(csv_files["users.csv"])
