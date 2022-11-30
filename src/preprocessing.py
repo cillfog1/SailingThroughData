@@ -101,6 +101,15 @@ def user_birthdate_to_year(csv_file):
     for i in range(len(dates)):
         date = datetime.strptime(dates[i], '%Y-%m-%d')
         csv_file.loc[(i, "user_dob")] = date.strftime("%Y")
+
+# Convert family link to a boolean of whether it is a family membership or not
+def family_link_to_boolean(csv_file):
+    for i in range(len(csv_file["family_link"])):
+        family_link = csv_file["family_link"][i]
+        if (family_link != "NULL"):
+            csv_file.loc[(i, "family_link")] = True
+        else:
+            csv_file.loc[(i, "family_link")] = False
         
 # NOTE: After doing the csv file edits, a new index column is added at the from of the files.
 # This removes it from all csv files.
@@ -155,6 +164,8 @@ if __name__ == "__main__":
     enumerate_user_swimming_ability(csv_files["users.csv"])
     user_gender_to_binary(csv_files["users.csv"])
     user_birthdate_to_year(csv_files["users.csv"])
+
+    family_link_to_boolean(csv_files["membership.csv"])
 
     save_csv_files(csv_files)
     strip_files_csv_index()
