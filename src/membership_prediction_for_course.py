@@ -108,6 +108,7 @@ def threeDScatterPlot():
 
 
 # ----------------------------------------------- Lasso Regression -----------------------------------------------
+# Creates Lasso Regression Models
 def trainLassoRegressionModel():
     X_train, X_test, y_train, y_test = train_test_split(features, targets, test_size=0.20)
     polynomial_deg = PolynomialFeatures(degree=5)
@@ -126,11 +127,36 @@ def trainLassoRegressionModel():
 
         title_lasso = 'Lasso Test Results, C=' + str(c)
 
-        # Send Lasso Model to part(i)c for each value of C
-        plotLassoRegressionModel(lasso_model, polynomial_deg, title_lasso)
+        # Send Lasso Model to plot function for each value of C
+        plotRegressionModel(lasso_model, polynomial_deg, title_lasso)
 
-# Plot the Lasso Regression Models
-def plotLassoRegressionModel(lasso_model, polynomial_deg, title):
+
+# ----------------------------------------------- Ridge Regression -----------------------------------------------
+# Same as above but with Ridge Regression rather than Lasso Regression
+# Creates Ridge Regression Models
+def trainRidgeRegressionModel():
+    X_train, X_test, y_train, y_test = train_test_split(features, targets, test_size=0.20)
+    polynomial_deg = PolynomialFeatures(degree=5)
+    polynomial_features = polynomial_deg.fit_transform(X_train)
+
+    c_arr = [1, 10, 1000]
+    for c in c_arr:
+        penalty = 1 / (2 * c)
+        ridge_model = Ridge(alpha=penalty)
+        ridge_model.fit(polynomial_features, y_train)
+        print('Ridge Regression, C=', c)
+        print('Coefficients : ', ridge_model.coef_)
+        print('Intercept : ', ridge_model.intercept_, '\n')
+
+        title_ridge = 'Ridge Test Results, C=' + str(c)
+
+        # Send Lasso Model to plot function for each value of C
+        plotRegressionModel(ridge_model, polynomial_deg, title_ridge)
+
+
+# ----------------------------------------------- Regression Model Helper Functions -----------------------------------------------
+# Plot the Regression Model
+def plotRegressionModel(lasso_model, polynomial_deg, title):
     Xtest = test_space()
 
     polynomial_Xtest = polynomial_deg.fit_transform(Xtest)
@@ -138,20 +164,19 @@ def plotLassoRegressionModel(lasso_model, polynomial_deg, title):
 
     graph_surface(y_pred, title)
 
-# Helper Function
+# Create test space
 def test_space():
     Xtest = []
     # 6 on Xaxis as there is no course type greater than 6
-    # 12 on Xaxis as the max month number is 12
+    # 4 and 12 on Yaxis as the min month numneber of a course is 4 and the max month number is 12
     Xgrid = np.linspace(0, 6)
-    Ygrid = np.linspace(0, 12)
+    Ygrid = np.linspace(4, 12)
     for i in Xgrid:
         for j in Ygrid:
             Xtest.append([i, j])
     Xtest = np.array(Xtest)
     return Xtest
 
-# Helper Function
 # Graph scatter and surface on the same plot
 def graph_surface(y_pred, title):
     fig = plt.figure()
@@ -183,3 +208,6 @@ if __name__ == "__main__":
 
     # Lasso Regression
     trainLassoRegressionModel()
+
+    # Ridge Regression
+    trainRidgeRegressionModel()
