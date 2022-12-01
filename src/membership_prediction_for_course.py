@@ -13,6 +13,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from sklearn.metrics import mean_squared_error
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.model_selection import train_test_split, KFold
+from sklearn.linear_model import Lasso, Ridge
 
 # ----------------------------------------------- Course Data -----------------------------------------------
 # Course_Dat object to store the information on each course
@@ -72,6 +76,7 @@ def getNumberOfMembersForCourse(course_id):
     return numOfMembers
 
 def convertToSeperateArrays(courses):
+    global features, targets
     course_level_type = []
     course_startDate = []
     course_numOfMembers = []
@@ -84,19 +89,80 @@ def convertToSeperateArrays(courses):
         course_startDate.append(course_startDate_as_float)
 
         course_numOfMembers.append(course.numOfMembers)
-    return course_level_type, course_startDate, course_numOfMembers
+    
+    features = np.column_stack((course_level_type, course_startDate))
+    targets = course_numOfMembers
 
 
 # ----------------------------------------------- 3D Scatter Plot Data -----------------------------------------------
-def threeDScatterPlot(feature1, feature2, target):
+def threeDScatterPlot():
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(feature1, feature2, target)
+    ax.scatter(features[:, 0], features[:, 1], targets)
     ax.set_xlabel('course_type.course_level')
     ax.set_ylabel('course_startDate')
     ax.set_zlabel('number_of_members')
 
     plt.title('3D Scatter Plot of Data')
+    plt.show()
+
+
+# ----------------------------------------------- Lasso Regression -----------------------------------------------
+def trainLassoRegressionModel():
+    X_train, X_test, y_train, y_test = train_test_split(features, targets, test_size=0.20)
+    polynomial_deg = PolynomialFeatures(degree=5)
+
+    # new feature matrix of features up to power 5
+    polynomial_features = polynomial_deg.fit_transform(X_train)
+
+    c_arr = [1, 10, 1000]
+    for c in c_arr:
+        penalty = 1/(2*c)
+        lasso_model = Lasso(alpha=penalty)
+        lasso_model.fit(polynomial_features, y_train)
+        print('Lasso Regression, C=', c)
+        print('Coefficients : ', lasso_model.coef_)
+        print('Intercept : ', lasso_model.intercept_, '\n')
+
+        title_lasso = 'Lasso Test Results, C=' + str(c)
+
+        # Send Lasso Model to part(i)c for each value of C
+        part_1c(lasso_model, polynomial_deg, title_lasso)
+
+# Plot the Lasso Regression Models
+def plotLassoRegressionModel((lasso_model, polynomial_deg, title):
+    Xtest = test_space(5)
+
+    polynomial_Xtest = polynomial_deg.fit_transform(Xtest)
+    y_pred = lasso_model.predict(polynomial_Xtest)
+
+    graph_surface(y_pred, title)
+
+# Helper Function
+# Creates Test Space
+def test_space(val):
+    Xtest = []
+    grid = np.linspace(0, val)
+    for i in grid:
+        for j in grid:
+            Xtest.append([i, j])
+    Xtest = np.array(Xtest)
+    return Xtest
+
+# Helper Function
+# Graph scatter and surface on the same plot
+def graph_surface(y_pred, title):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    Xtest_graph = test_space(12)
+    surface = ax.plot_trisurf(Xtest_graph[:, 0], Xtest_graph[:, 1], y_pred, cmap='viridis')
+    ax.scatter(features[:, 0], features[:, 1], targets, label='Training data')
+    ax.set_xlabel('course_type.course_level')
+    ax.set_ylabel('course_startDate')
+    ax.set_zlabel('number_of_members')
+    fig.colorbar(surface, label='Predictions', shrink=0.5, aspect=8)
+    plt.title(title)
+    plt.legend()
     plt.show()
 
 
@@ -108,7 +174,10 @@ if __name__ == "__main__":
     courses = extractData(csv_files)
 
     # Convert courses to seperate arrays
-    course_level_type, course_startDate, course_numOfMembers = convertToSeperateArrays(courses)
+    convertToSeperateArrays(courses)
 
     # 3D Scatter Plot of the data
-    threeDScatterPlot(course_level_type, course_startDate, course_numOfMembers)
+    #threeDScatterPlot()
+
+    # Lasso Regression
+    trainLassoRegressionModel()
