@@ -131,7 +131,7 @@ def trainLassoRegressionModel():
 
 # Plot the Lasso Regression Models
 def plotLassoRegressionModel(lasso_model, polynomial_deg, title):
-    Xtest = test_space(5)
+    Xtest = test_space()
 
     polynomial_Xtest = polynomial_deg.fit_transform(Xtest)
     y_pred = lasso_model.predict(polynomial_Xtest)
@@ -139,12 +139,14 @@ def plotLassoRegressionModel(lasso_model, polynomial_deg, title):
     graph_surface(y_pred, title)
 
 # Helper Function
-# Creates Test Space
-def test_space(val):
+def test_space():
     Xtest = []
-    grid = np.linspace(0, val)
-    for i in grid:
-        for j in grid:
+    # 6 on Xaxis as there is no course type greater than 6
+    # 12 on Xaxis as the max month number is 12
+    Xgrid = np.linspace(0, 6)
+    Ygrid = np.linspace(0, 12)
+    for i in Xgrid:
+        for j in Ygrid:
             Xtest.append([i, j])
     Xtest = np.array(Xtest)
     return Xtest
@@ -154,7 +156,7 @@ def test_space(val):
 def graph_surface(y_pred, title):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    Xtest_graph = test_space(12)
+    Xtest_graph = test_space()
     surface = ax.plot_trisurf(Xtest_graph[:, 0], Xtest_graph[:, 1], y_pred, cmap='viridis')
     ax.scatter(features[:, 0], features[:, 1], targets, label='Training data')
     ax.set_xlabel('course_type.course_level')
@@ -177,7 +179,7 @@ if __name__ == "__main__":
     convertToSeperateArrays(courses)
 
     # 3D Scatter Plot of the data
-    #threeDScatterPlot()
+    threeDScatterPlot()
 
     # Lasso Regression
     trainLassoRegressionModel()
