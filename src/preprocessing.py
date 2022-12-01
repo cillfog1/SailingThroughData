@@ -73,6 +73,15 @@ def enumerate_course_levels(course_csv_file):
         else:
             course_csv_file.loc[(i, "course_level")] = 0
 
+# Remove unnecessary course columns
+def remove_unnecessary_course_columns(csv_file):
+
+    # Columns to remove
+    columns_to_remove = ["course_visible", "course_bookable"]
+
+    for c in columns_to_remove:
+        csv_file.drop(columns=c, axis='columns', inplace=True)
+
 # Replace sailing cert with integer representation.
 def enumerate_user_sailing_cert(csv_file):
     # NOTE: If there is no cert provided I am assuming there is none. This may be a bad/incorrect assumption.
@@ -110,6 +119,15 @@ def family_link_to_boolean(csv_file):
             csv_file.loc[(i, "family_link")] = True
         else:
             csv_file.loc[(i, "family_link")] = False
+
+# Remove unnecessary session_participants columns
+def remove_unnecessary_session_participants_columns(csv_file):
+
+    # Columns to remove
+    columns_to_remove = ["boat_id"]
+
+    for c in columns_to_remove:
+        csv_file.drop(columns=c, axis='columns', inplace=True)
         
 # NOTE: After doing the csv file edits, a new index column is added at the from of the files.
 # This removes it from all csv files.
@@ -157,8 +175,10 @@ if __name__ == "__main__":
 
     # Process CSV files:
     datetime_to_timestamp(csv_files)
+
     enumerate_course_types(csv_files["courses.csv"])
     enumerate_course_levels(csv_files["courses.csv"])
+    remove_unnecessary_course_columns(csv_files["courses.csv"])
 
     enumerate_user_sailing_cert(csv_files["users.csv"])
     enumerate_user_swimming_ability(csv_files["users.csv"])
@@ -166,6 +186,8 @@ if __name__ == "__main__":
     user_birthdate_to_year(csv_files["users.csv"])
 
     family_link_to_boolean(csv_files["membership.csv"])
+
+    remove_unnecessary_session_participants_columns(csv_files["session_participants.csv"])
 
     save_csv_files(csv_files)
     strip_files_csv_index()
