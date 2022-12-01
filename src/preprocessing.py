@@ -111,6 +111,18 @@ def user_birthdate_to_year(csv_file):
         date = datetime.strptime(dates[i], '%Y-%m-%d')
         csv_file.loc[(i, "user_dob")] = date.strftime("%Y")
 
+# Determine if the user is local (ie. From Kerry) or not
+def determine_if_locale(csv_file):
+    for i in range(len(csv_file["user_address4"])):
+        county = csv_file["user_address4"][i]
+        # If kerry or ciarra is a substing of the county field in lowercase
+        if ("kerry" in county.lower() or "ciarra" in county.lower()):
+              csv_file.loc[(i, "user_local")] = True
+        else:
+            csv_file.loc[(i, "user_local")] = False
+    csv_file.drop(columns="user_address4", axis='columns', inplace=True)
+    csv_file.drop(columns="user_address5", axis='columns', inplace=True)
+
 # Convert family link to a boolean of whether it is a family membership or not
 def family_link_to_boolean(csv_file):
     for i in range(len(csv_file["family_link"])):
@@ -184,6 +196,7 @@ if __name__ == "__main__":
     enumerate_user_swimming_ability(csv_files["users.csv"])
     user_gender_to_binary(csv_files["users.csv"])
     user_birthdate_to_year(csv_files["users.csv"])
+    determine_if_locale(csv_files["users.csv"])
 
     family_link_to_boolean(csv_files["membership.csv"])
 
