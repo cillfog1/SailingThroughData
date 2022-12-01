@@ -127,10 +127,10 @@ def trainLassoRegressionModel():
         title_lasso = 'Lasso Test Results, C=' + str(c)
 
         # Send Lasso Model to part(i)c for each value of C
-        part_1c(lasso_model, polynomial_deg, title_lasso)
+        plotLassoRegressionModel(lasso_model, polynomial_deg, title_lasso)
 
 # Plot the Lasso Regression Models
-def plotLassoRegressionModel((lasso_model, polynomial_deg, title):
+def plotLassoRegressionModel(lasso_model, polynomial_deg, title):
     Xtest = test_space(5)
 
     polynomial_Xtest = polynomial_deg.fit_transform(Xtest)
