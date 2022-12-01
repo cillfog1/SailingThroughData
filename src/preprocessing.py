@@ -97,7 +97,7 @@ def enumerate_user_swimming_ability(csv_file):
         ability = csv_file["user_swimmingAbility"][i]
         csv_file.loc[(i, "user_swimmingAbility")] = ability_dict[ability]
 
-# NOTE: All 'Other's are not Male.
+# NOTE: All 'Other's are now Male.
 def user_gender_to_binary(csv_file):
     gender_dic = {'Female': 0, 'Male': 1, 'Other': 1}
     for i in range(len(csv_file["user_gender"])):
