@@ -266,10 +266,9 @@ def KFolds_polynomial_features(dataset):
     plt.xlabel('q')
     plt.title('Plot of maximum polynomial features(q), vs. mean F1-score of the model')
     plt.ylabel('Mean F1 score')
-    #fig_name = 'kfolds_poly_i.png' if first else 'kfolds_poly_ii.png'
-    #plt.savefig(fig_name)
-    #plt.clf()
-    plt.show()
+    plt.savefig('MembershipConversion:kfolds_polynomial_features.png')
+    plt.clf()
+    #plt.show()
 
 def KFolds_C_penalty(dataset):
     # Steps: 1. For a number of C values [0.05, 0.1, 0.5, 1, 5, 10, 50] generate a model.
@@ -296,10 +295,9 @@ def KFolds_C_penalty(dataset):
     plt.title('Plot of c hyperparameter vs. mean F1-score of the model')
     plt.xlabel('c')
     plt.ylabel('Mean F1 score')
-    #fig_name = 'kfolds_c_i.png' if first else 'kfold_c_ii.png'
-    #plt.savefig(fig_name)
-    #plt.clf()
-    plt.show()
+    plt.savefig('MembershipConversion:kfolds_c_penalty.png')
+    plt.clf()
+    #plt.show()
 
 def generate_confusion_matrix(dataset):
     best_q = 1
@@ -362,10 +360,9 @@ def ROC_curve(dataset):
     plt.xlabel('False positive rate')
     plt.ylabel('True positive rate')
     plt.plot([0,1], [0,1], color='green', linestyle='--')
-    #fig_name = 'roc_logistic_i.png' if first else 'roc_logistic_ii.png'
-    #plt.savefig(fig_name)
-    #plt.clf()
-    plt.show()
+    plt.savefig('MembershipConversion:roc_curve.png')
+    plt.clf()
+    #plt.show()
 
 
 
@@ -433,10 +430,10 @@ if __name__ == "__main__":
     #data = generate_data("2020", csv_files)
 
     is_member = np.array([0, 0, 0, 0, 0, 0, 0, 0,
-                          1, 0, 0, 0, 0, 0, 0, 0,
-                          1, 1, 1, 0, 0, 0, 0, 0,
+                          1, 0, 0, 1, 0, 0, 0, 0,
+                          0, 1, 1, 0, 0, 0, 0, 0,
                           1, 1, 1, 1, 1, 1, 0, 0,
-                          1, 1, 1, 1, 1, 1, 1, 1,
+                          1, 1, 1, 1, 0, 1, 0, 1,
                           1, 1, 1, 1, 1, 1, 1, 1])
 
     course_count_data = np.array(course_count_data(8))

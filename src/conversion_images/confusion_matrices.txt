@@ -1,0 +1,7 @@
+Confustion Matrix: Logistic Regression
+[TP, FP]: [ 5 ,  2 ]
+[FN, TN]: [ 0 ,  3 ]
+
+Confustion Matrix: Dummy(Most Frequent)
+[TP, FP]: [ 0 ,  0 ]
+[FN, TN]: [ 6 ,  4 ]
