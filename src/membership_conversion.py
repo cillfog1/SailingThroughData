@@ -210,10 +210,53 @@ def graph_data(dataset):
         l = '-1 actual' if yi else '1 actual'
         ax.scatter(course_counts.take(ix), swimming_abilities.take(ix), sailing_certs.take(ix), c=col, label=l)
 
+    ax.legend();
     ax.set_xlabel('Course Count')
     ax.set_ylabel('Swimming Ability')
     ax.set_zlabel('Sailing Cert')
     plt.title('3D Scatter Plot of Data')
+    plt.show()
+
+# ----------------------------------------------- Plot Feature Visualisation -----------------------------------------------
+def normaliseData(X):
+    shift = np.average(X)
+    scalingFactor = np.max(X) - np.min(X)
+    X = (X-shift) / scalingFactor
+    return X
+
+def displayOriginalData(dataset):
+  
+    fig = plt.figure()
+    ax1 = plt.subplot(131)
+    ax2 = plt.subplot(132)
+    ax3 = plt.subplot(133)
+    course_counts = dataset.iloc[:,0]
+    swimming_abilities = dataset.iloc[:,1]
+    sailing_certs = dataset.iloc[:,2]
+
+    course_counts = normaliseData(course_counts)
+    swimming_abilities = normaliseData(swimming_abilities)
+    sailing_certs = normaliseData(sailing_certs)
+    y = dataset.iloc[:,3]
+    for yi in np.unique(y):
+        ix = np.where(y == yi)[0]
+        col = 'blue' if yi else 'lime'
+        l = 'student' if yi else 'member'
+
+        ax1.scatter(course_counts.take(ix), sailing_certs.take(ix), c=col, label=l)
+        ax2.scatter(course_counts.take(ix), swimming_abilities.take(ix), c = col, label = l)
+        ax3.scatter(sailing_certs.take(ix), swimming_abilities.take(ix), c = col, label = l)
+
+    ax3.legend()
+    
+    ax1.set_xlabel('Course Count')
+    ax1.set_ylabel('Sailing Certs')
+    ax2.set_title('Scatter Plots of Normalised Data')
+    ax2.set_xlabel('Course Count')
+    ax2.set_ylabel('Swimming Ability')
+    ax3.set_xlabel('Sailing Certs')
+    ax3.set_ylabel('Swimming Ability')
+    plt.tight_layout()
     plt.show()
 
 if __name__ == "__main__":
