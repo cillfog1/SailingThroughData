@@ -91,7 +91,7 @@ def convertToSeperateArrays(courses):
         course_numOfMembers.append(course.numOfMembers)
     
     features = np.column_stack((course_level_type, course_startDate))
-    targets = course_numOfMembers
+    targets = np.array(course_numOfMembers)
 
 
 # ----------------------------------------------- 3D Scatter Plot Data -----------------------------------------------
@@ -130,6 +130,37 @@ def trainLassoRegressionModel():
         # Send Lasso Model to plot function for each value of C
         plotRegressionModel(lasso_model, polynomial_deg, title_lasso)
 
+# Preform kFold for 5 splits for Lasso Regression
+# Vary C value (1, 5, 10, 15, 20, 25, 50, 100)
+# Plot graph to analyse the data
+def perform5FoldCrossValidationLasso():
+    polynomial_deg = PolynomialFeatures(degree=5)
+    standard_devs = []
+    means = []
+    c_arr = [1, 5, 10, 15, 20, 25, 50, 100]
+    for c in c_arr:
+        penalty = 1 / (2 * c)
+        lasso_model = Lasso(alpha=penalty)
+        five_fold = KFold(n_splits=5, shuffle=False)
+        estimates_mean_sq_err = []
+
+        for train_index, test_index in five_fold.split(targets):
+            X_train, X_test, y_train, y_test = features[train_index], features[test_index], targets[train_index], targets[test_index]
+            polynomial_features = polynomial_deg.fit_transform(X_train)
+            lasso_model.fit(polynomial_features, y_train)
+            polynomial_Xtest = polynomial_deg.fit_transform(X_test)
+            y_pred = lasso_model.predict(polynomial_Xtest)
+            estimates_mean_sq_err.append(mean_squared_error(y_test, y_pred))
+
+        means.append(np.mean(estimates_mean_sq_err))
+        standard_devs.append(np.std(estimates_mean_sq_err))
+
+    plt.errorbar(c_arr, means, yerr=standard_devs, ecolor='r', linewidth=2, capsize=5)
+    plt.title('5 Fold Lasso with various C values')
+    plt.xlabel('C')
+    plt.ylabel('Mean (blue) / Standard Deviation (red)')
+    plt.show()
+
 
 # ----------------------------------------------- Ridge Regression -----------------------------------------------
 # Same as above but with Ridge Regression rather than Lasso Regression
@@ -152,6 +183,37 @@ def trainRidgeRegressionModel():
 
         # Send Lasso Model to plot function for each value of C
         plotRegressionModel(ridge_model, polynomial_deg, title_ridge)
+
+# Preform kFold for 5 splits for Ridge Regression
+# Vary C value (0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10)
+# Plot graph to analyse the data
+def perform5FoldCrossValidationRidge():
+    polynomial_deg = PolynomialFeatures(degree=5)
+    standard_devs = []
+    means = []
+    c_arr = [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10]
+    for c in c_arr:
+        penalty = 1 / (2 * c)
+        ridge_model = Ridge(alpha=penalty)
+        five_fold = KFold(n_splits=5, shuffle=False)
+        estimates_mean_sq_err = []
+
+        for train_index, test_index in five_fold.split(features):
+            X_train, X_test, y_train, y_test = features[train_index], features[test_index], targets[train_index], targets[test_index]
+            polynomial_features = polynomial_deg.fit_transform(X_train)
+            ridge_model.fit(polynomial_features, y_train)
+            polynomial_Xtest = polynomial_deg.fit_transform(X_test)
+            y_pred = ridge_model.predict(polynomial_Xtest)
+            estimates_mean_sq_err.append(mean_squared_error(y_test, y_pred))
+
+        means.append(np.mean(estimates_mean_sq_err))
+        standard_devs.append(np.std(estimates_mean_sq_err))
+
+    plt.errorbar(np.log10(c_arr), means, yerr=standard_devs, ecolor='r', linewidth=2, capsize=5)
+    plt.title('5 Fold Ridge with various C values')
+    plt.xlabel('log10(C)');
+    plt.ylabel('Mean (blue) / Standard Deviation (red)')
+    plt.show()
 
 
 # ----------------------------------------------- Regression Model Helper Functions -----------------------------------------------
@@ -204,10 +266,12 @@ if __name__ == "__main__":
     convertToSeperateArrays(courses)
 
     # 3D Scatter Plot of the data
-    threeDScatterPlot()
+    #threeDScatterPlot()
 
     # Lasso Regression
-    trainLassoRegressionModel()
+    #trainLassoRegressionModel()
+    perform5FoldCrossValidationLasso()
 
     # Ridge Regression
-    trainRidgeRegressionModel()
+    #trainRidgeRegressionModel()
+    perform5FoldCrossValidationRidge()
