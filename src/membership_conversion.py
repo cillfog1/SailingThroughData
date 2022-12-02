@@ -14,13 +14,12 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-#from sklearn.model_selection import train_test_split
-#from sklearn.preprocessing   import PolynomialFeatures
-#from sklearn.linear_model    import LogisticRegression
-#from sklearn.neighbors       import KNeighborsClassifier
-#from sklearn.dummy           import DummyClassifier
-#from sklearn.model_selection import KFold, cross_val_score
-#from sklearn.metrics         import f1_score, confusion_matrix, roc_curve
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing   import PolynomialFeatures
+from sklearn.linear_model    import LogisticRegression
+from sklearn.dummy           import DummyClassifier
+from sklearn.model_selection import KFold, cross_val_score
+from sklearn.metrics         import f1_score, confusion_matrix, roc_curve
 
 csv_file_names = [
     "course_participants.csv",
@@ -38,12 +37,6 @@ class Data:
         self.swimming_abilities = swimming_abilities
         self.sailing_certs      = sailing_certs
         self.labels             = labels
-
-#class Data:
-#    def __init__(self, course_count, local, label):
-#        self.course_count = course_count
-#        self.local = local
-#        self.label = label
 
 def get_user_ids(year, user_csv):
     # Get all indices where the year matches
@@ -101,17 +94,6 @@ def generate_student_or_member(year, user_ids, csv_files):
 
     return user_id_membership
 
-#def generate_user_local(user_ids, csv_file):
-#    is_local_map = dict()
-#    for user in user_ids:
-#        is_local_map[user] = False
-#
-#    csv_is_local = csv_file["user_local"]
-#    for user_id in user_ids:
-#        is_local_map[int(user_id)] = csv_is_local[int(user_id)-1]
-#
-#    return is_local_map
-
 def generate_course_count(year, user_ids, csv_file):
     # Get all indices where the year matches
     indices = []
@@ -161,12 +143,17 @@ def generate_data(year, csv_files):
     
     return data
 
+def noramlise(X):
+    shift = np.average(X)
+    scalingFactor = np.max(X) - np.min(X)
+    X = (X-shift) / scalingFactor
+    return X
+
 def data_to_numpy_dataset(data):
-    course_counts      = list(data.course_counts)
-    swimming_abilities = list(data.swimming_abilities)
-    sailing_certs      = list(data.sailing_certs)
+    course_counts      = noramlise(list(data.course_counts))
+    swimming_abilities = noramlise(list(data.swimming_abilities))
+    sailing_certs      = noramlise(list(data.sailing_certs))
     is_member_labels   = list(data.labels)
-    print(type(sailing_certs[0]))
     dataframe = pd.DataFrame(list(zip(course_counts, swimming_abilities, sailing_certs, is_member_labels)), columns =['Course Count', 'Swimming Ability', 'Sailing Cert', 'Member'])
     return dataframe
 
@@ -178,37 +165,72 @@ def load_csv_files():
         csv_files[file] = csv_file
     return csv_files
 
-def graph_data(dataset):
-    course_counts = dataset.iloc[:,0]
-    swimming_ability = dataset.iloc[:,1]
-    y  = dataset.iloc[:,2]
+# Course Count Range    : 1 - 4
+# Swimming Ability Range: 0 - 3
+# Sailing Ability Range : 0 - 5
+# I want to find how many users have a go to a given number of courses and have a particular swimming ability
+# NOTE: Course count is shifted down by -1 to match the index ranges of swimming and sailing ability.
+def generate_scatter_marker_size(data):
+    user_ids = list(data.user_ids)
+    counts = list(data.course_counts)
+    swimming = list(data.swimming_abilities)
+    sailing = list(data.sailing_certs)
+
+    count_values = set(counts)
+    swimming_values = set(swimming)
+    sailing_values = set(sailing)
+
+    count_size = len(count_values)
+    swimming_size = len(swimming_values)
+    sailing_size = len(sailing_values)
+
+    counts_swimming_sizes = [[0 for _ in range(swimming_size)] for _ in range(count_size)]
+    counts_sailing_sizes = [[0 for _ in range(sailing_size)] for _ in range(count_size)]
+
+    for c in count_values:
+        for s in swimming_values:
+            count = 0
+            for user in range(len(user_ids)):
+                index = user - 1
+                if counts[index]-1 == c and swimming[index] == s:
+                    count += 1
+            counts_swimming_sizes[c-1][s] = count
+
+
+    for c in count_values:
+        for s in sailing_values:
+            count = 0
+            for user in range(len(user_ids)):
+                index = user - 1
+                if counts[index]-1 == c and sailing[index] == s:
+                    count += 1
+            counts_sailing_sizes[c-1][s] = count
+
+    return counts_swimming_sizes, counts_sailing_sizes
+
+def graph_2D_data(x1, x2, y, x1_label, x2_label):
     _, ax = plt.subplots()
     for yi in np.unique(y):
         ix = np.where(y == yi)[0]
         col = 'blue' if yi else 'lime'
-        l = '-1 actual' if yi else '1 actual'
-        ax.scatter(course_counts.take(ix), swimming_ability.take(ix), c=col, marker='o', label=l)
-    plt.xlabel('Course Count')
-    plt.ylabel('Swimming Ability')
+        l = 'Member' if yi else 'Student'
+        ax.scatter(x1.take(ix), x2.take(ix), c=col, marker='o', label=l)
+    plt.xlabel(x1_label)
+    plt.ylabel(x2_label)
     plt.legend(loc='upper right')
-    plt.title('Scatter plot of Couse Count against Swimming Ability')
+    plt.title(f"Scatter plot of {x1_label} against {x2_label}")
     #fig_name = 'dataset1.png' if first else 'dataset2.png'
     #plt.savefig(fig_name)
     plt.show()
-    plt.clf()
 
-def graph_data(dataset):
+def graph_3D_data(x1, x2, x3, y):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    course_counts = dataset.iloc[:,0]
-    swimming_abilities = dataset.iloc[:,1]
-    sailing_certs = dataset.iloc[:,2]
-    y = dataset.iloc[:,3]
     for yi in np.unique(y):
         ix = np.where(y == yi)[0]
         col = 'blue' if yi else 'lime'
         l = '-1 actual' if yi else '1 actual'
-        ax.scatter(course_counts.take(ix), swimming_abilities.take(ix), sailing_certs.take(ix), c=col, label=l)
+        ax.scatter(x1.take(ix), x2.take(ix), x3.take(ix), c=col, label=l)
 
     ax.set_xlabel('Course Count')
     ax.set_ylabel('Swimming Ability')
@@ -216,9 +238,57 @@ def graph_data(dataset):
     plt.title('3D Scatter Plot of Data')
     plt.show()
 
+def KFolds_polynomial_features(dataset):
+    # Using sklearn augment the two features in the dataset with polynomial features
+    # and train a Logistic Regression classifier with L2 penalty added to the cost function.
+    course_counts      = dataset.iloc[:,0]
+    swimming_abilities = dataset.iloc[:,1]
+    X = np.column_stack((course_counts, swimming_abilities))
+    y = dataset.iloc[:,3]
+
+    # i) Use cross-validation to select the maximum order of polynomial to use.
+    # Steps: 1. For a number of polynomial values [1, 2, 3, 4, 5, 6]:
+    #        2. Generate the polynomial data and the model.
+    #        3. Do k-fold cross-validation for some k value, like 5.
+    #        4. Train the model and get the F1-score.
+    #        5. Choosing q too small or too large increases the prediction error on the test data but not on the training data.
+    k_fold = KFold(n_splits=5)
+    q_range = [1, 2, 3, 4, 5, 6]
+    q_mean_f1 = []
+    q_std_error = []
+    for q in q_range:
+        x_poly = PolynomialFeatures(q).fit_transform(X)
+        # NOTE: I choose l2 becaues I never want the model to fully zero out any inputs.
+        model = LogisticRegression(penalty='l2', solver='lbfgs')
+        f1_score_buffer = []
+        for train, test in k_fold.split(x_poly):
+            model.fit(x_poly[train], y[train])
+            y_pred = model.predict(x_poly[test])
+            score = f1_score(y_true=y[test], y_pred=y_pred)
+            f1_score_buffer.append(score)
+        q_mean_f1.append(np.array(f1_score_buffer).mean())
+        q_std_error.append(np.array(f1_score_buffer).std())
+
+    plt.errorbar(q_range, q_mean_f1, yerr=q_std_error, linewidth=3)
+    plt.xlabel('q')
+    plt.title('Plot of maximum polynomial features(q), vs. mean F1-score of the model')
+    plt.ylabel('Mean F1 score')
+    #fig_name = 'kfolds_poly_i.png' if first else 'kfolds_poly_ii.png'
+    #plt.savefig(fig_name)
+    #plt.clf()
+    plt.show()
+
 if __name__ == "__main__":
     csv_files = load_csv_files()
     data = generate_data("2020", csv_files)
     dataset = data_to_numpy_dataset(data)
-    graph_data(dataset)
+
+    course_counts      = dataset.iloc[:,0]
+    swimming_abilities = dataset.iloc[:,1]
+    sailing_certs      = dataset.iloc[:,2]
+    is_member          = dataset.iloc[:,3]
+
+    graph_2D_data(course_counts, swimming_abilities, is_member, 'Course Count', 'Swimming Ability')
+
+    KFolds_polynomial_features(dataset)
 
