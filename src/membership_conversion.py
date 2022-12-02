@@ -364,7 +364,38 @@ def ROC_curve(dataset):
     plt.clf()
     #plt.show()
 
+def generate_logistic_model_prediction(dataset):
+    best_q = 1
+    best_c = 0.5
+    # Plot the ROC curves for your trained Logistic Regression and kNN classifiers.
+    # Also plot the point(s) on the ROC plot corresponding to the baseline classifiers.
+    # Be sure to include enough points in the ROC curves to allow the detailed shape to be seen.
+    x = np.column_stack((dataset.iloc[:,0], dataset.iloc[:,1]))
+    x_poly = PolynomialFeatures(best_q).fit_transform(x)
+    train_set, test_set = train_test_split(dataset, test_size=0.2)
+    x_train = np.column_stack((train_set.iloc[:,0], train_set.iloc[:,1]))
+    y_train = train_set.iloc[:,2]
+    x_test  = np.column_stack((test_set.iloc[:,0], test_set.iloc[:,1]))
+    y_test  = test_set.iloc[:,2]
+    x_poly_train = PolynomialFeatures(best_q).fit_transform(x_train)
+    x_poly_test  = PolynomialFeatures(best_q).fit_transform(x_test)
+    model = LogisticRegression(penalty='l2', solver='lbfgs', C=best_c)
+    model.fit(x_poly_train, y_train)
+    y_pred = model.predict(x_poly)
 
+    _, ax = plt.subplots()
+    for yi in np.unique(y_pred):
+        ix = np.where(y_pred == yi)[0]
+        col = 'blue' if yi else 'lime'
+        l = 'Predicted Member' if yi else 'Predicted Student'
+        ax.scatter(dataset.iloc[:,0].take(ix), dataset.iloc[:,1].take(ix), c=col, marker='o', label=l)
+    plt.xlabel('Course Count')
+    plt.ylabel('Swimming Ability')
+    plt.legend(loc='upper right')
+    plt.title('Scatter plot of Course Count against Swimming Ability')
+    plt.savefig('MembershipConversion:predictions.png')
+    plt.clf()
+    
 
 # ----------------------------------------------- Plot Feature Visualisation -----------------------------------------------
 def normaliseData(X):
@@ -448,4 +479,6 @@ if __name__ == "__main__":
     generate_confusion_matrix(dataset)
     compare_most_frequent(dataset)
     ROC_curve(dataset)
+
+    generate_logistic_model_prediction(dataset)
 
