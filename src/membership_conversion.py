@@ -338,6 +338,36 @@ def compare_most_frequent(dataset):
     print("[FN, TN]: [", fn, ", ", tn, "]")
     print()
 
+    
+def ROC_curve(dataset):
+    best_q = 1
+    best_c = 0.5
+    # Plot the ROC curves for your trained Logistic Regression and kNN classifiers.
+    # Also plot the point(s) on the ROC plot corresponding to the baseline classifiers.
+    # Be sure to include enough points in the ROC curves to allow the detailed shape to be seen.
+    train_set, test_set = train_test_split(dataset, test_size=0.2)
+    x_train = np.column_stack((train_set.iloc[:,0], train_set.iloc[:,1]))
+    y_train = train_set.iloc[:,2]
+    x_test  = np.column_stack((test_set.iloc[:,0], test_set.iloc[:,1]))
+    y_test  = test_set.iloc[:,2]
+
+    # Calculate the confusion matrices for your trained Logistic Regression
+    x_poly_train = PolynomialFeatures(best_q).fit_transform(x_train)
+    x_poly_test  = PolynomialFeatures(best_q).fit_transform(x_test)
+    model = LogisticRegression(penalty='l2', solver='lbfgs', C=best_c)
+    model.fit(x_poly_train, y_train)
+    fpr, tpr, _ = roc_curve(y_test, model.decision_function(x_poly_test))
+    plt.plot(fpr, tpr)
+    plt.title('Plot of ROC curve for the trained Logistic Regression model')
+    plt.xlabel('False positive rate')
+    plt.ylabel('True positive rate')
+    plt.plot([0,1], [0,1], color='green', linestyle='--')
+    #fig_name = 'roc_logistic_i.png' if first else 'roc_logistic_ii.png'
+    #plt.savefig(fig_name)
+    #plt.clf()
+    plt.show()
+
+
 
 # ----------------------------------------------- Plot Feature Visualisation -----------------------------------------------
 def normaliseData(X):
@@ -420,4 +450,5 @@ if __name__ == "__main__":
     KFolds_C_penalty(dataset)
     generate_confusion_matrix(dataset)
     compare_most_frequent(dataset)
+    ROC_curve(dataset)
 
