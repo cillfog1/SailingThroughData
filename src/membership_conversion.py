@@ -264,4 +264,5 @@ if __name__ == "__main__":
     data = generate_data("2020", csv_files)
     dataset = data_to_numpy_dataset(data)
     graph_data(dataset)
+    displayOriginalData(dataset)
 
