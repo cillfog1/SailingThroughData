@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import PolynomialFeatures
-from sklearn.model_selection import train_test_split, KFold
+from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn.linear_model import Lasso, Ridge
 
 # ----------------------------------------------- Course Data -----------------------------------------------
@@ -91,7 +91,28 @@ def convertToSeperateArrays(courses):
         course_numOfMembers.append(course.numOfMembers)
     
     features = np.column_stack((course_level_type, course_startDate))
-    targets = course_numOfMembers
+    targets = np.array(course_numOfMembers)
+
+
+# ----------------------------------------------- Plot Feature Visualisation -----------------------------------------------
+def displayOriginalData():
+    feature1= normaliseData(features[:, 0])
+    feature2 = normaliseData(features[:,1])
+    target = normaliseData(targets)
+    
+    plt.scatter(feature1, target, c='g', marker='+', label="Feature = course_type.course_level")
+    plt.scatter(feature2, target, c='b', marker='o', label="Feature = course_startDate")
+    plt.title("Dataset Visualisation")
+    plt.legend(scatterpoints = 1, fontsize=10)
+    plt.xlabel("Feature")
+    plt.ylabel("Target")
+    plt.show();
+
+def normaliseData(X):
+    shift = np.average(X)
+    scalingFactor = np.max(X) - np.min(X)
+    X = (X-shift) / scalingFactor
+    return X
 
 
 # ----------------------------------------------- 3D Scatter Plot Data -----------------------------------------------
@@ -108,59 +129,179 @@ def threeDScatterPlot():
 
 
 # ----------------------------------------------- Lasso Regression -----------------------------------------------
-# Creates Lasso Regression Models
-def trainLassoRegressionModel():
-    X_train, X_test, y_train, y_test = train_test_split(features, targets, test_size=0.20)
-    polynomial_deg = PolynomialFeatures(degree=5)
+# Preform kFold for 5 splits for Lasso Regression
+# Vary C value (0.000000001, 0.00000001, 0.0000001, 0.000001, 0.00001, 0.0001, 0.001)
+# Plot graph to analyse the data
+def lasso5FoldCrossValidationForC(degreeToUse):
+    polynomial_deg = PolynomialFeatures(degree=degreeToUse)
+    standard_devs = []
+    means = []
+    c_arr = [0.000000001, 0.00000001, 0.0000001, 0.000001, 0.00001, 0.0001, 0.001]
+    for c in c_arr:
+        penalty = 1 / (2 * c)
+        lasso_model = Lasso(alpha=penalty)
+        five_fold = KFold(n_splits=5, shuffle=False)
+        estimates_mean_sq_err = []
 
-    # new feature matrix of features up to power 5
+        for train_index, test_index in five_fold.split(targets):
+            X_train, X_test, y_train, y_test = features[train_index], features[test_index], targets[train_index], targets[test_index]
+            polynomial_features = polynomial_deg.fit_transform(X_train)
+            lasso_model.fit(polynomial_features, y_train)
+            polynomial_Xtest = polynomial_deg.fit_transform(X_test)
+            y_pred = lasso_model.predict(polynomial_Xtest)
+            estimates_mean_sq_err.append(mean_squared_error(y_test, y_pred))
+
+        means.append(np.mean(estimates_mean_sq_err))
+        standard_devs.append(np.std(estimates_mean_sq_err))
+
+    plt.errorbar(np.log10(c_arr), means, yerr=standard_devs, ecolor='r', linewidth=2, capsize=5)
+    plt.title('5 Fold Lasso with various C values')
+    plt.xlabel('log10(C)');
+    plt.ylabel('Mean (blue) / Standard Deviation (red)')
+    plt.show()
+
+# K Fold Regression to get maximum order of polynomial to use
+# Plot graph to analyse the data
+def lasso5FoldCrossValidationForDegree(cValueToUse):
+    penalty = 1 / (2 * cValueToUse)
+    lasso_model = Lasso(alpha=penalty)
+    five_fold = KFold(n_splits=5, shuffle=False)
+    estimates_mean_sq_err = []
+    standard_devs = []
+    means = []
+    poly_vals = [1, 2, 3, 4, 5]
+    for d in poly_vals:
+        polynomial_deg = PolynomialFeatures(degree=d)
+        for train_index, test_index in five_fold.split(targets):
+            X_train, X_test, y_train, y_test = features[train_index], features[test_index], targets[train_index], targets[test_index]
+            polynomial_features = polynomial_deg.fit_transform(X_train)
+            lasso_model.fit(polynomial_features, y_train)
+            polynomial_Xtest = polynomial_deg.fit_transform(X_test)
+            y_pred = lasso_model.predict(polynomial_Xtest)
+            estimates_mean_sq_err.append(mean_squared_error(y_test, y_pred))
+
+        means.append(np.mean(estimates_mean_sq_err))
+        standard_devs.append(np.std(estimates_mean_sq_err))
+
+    plt.errorbar(poly_vals, means, yerr=standard_devs, ecolor='r', linewidth=2, capsize=5)
+    plt.title('5 Fold Lasso with Various Polynomial Degrees')
+    plt.xlabel('Polynomial Degrees');
+    plt.ylabel('Mean (blue) / Standard Deviation (red)')
+    plt.show()
+
+# Create Lasso Regression Model
+def trainLassoRegressionModel(degreeToUse, cValueToUse):
+    X_train, X_test, y_train, y_test = train_test_split(features, targets, test_size=0.20)
+
+    # Use polynomial feature degree value determined during cross-validation
+    polynomial_deg = PolynomialFeatures(degree=degreeToUse)
     polynomial_features = polynomial_deg.fit_transform(X_train)
 
-    c_arr = [1, 10, 1000]
-    for c in c_arr:
-        penalty = 1/(2*c)
-        lasso_model = Lasso(alpha=penalty)
-        lasso_model.fit(polynomial_features, y_train)
-        print('Lasso Regression, C=', c)
-        print('Coefficients : ', lasso_model.coef_)
-        print('Intercept : ', lasso_model.intercept_, '\n')
+    # Use C value determined during cross-validation
+    penalty = 1/(2*cValueToUse)
+    lasso_model = Lasso(alpha=penalty)
+    lasso_model.fit(polynomial_features, y_train)
+    print('Lasso Regression, C=', np.log10(cValueToUse))
+    print('Coefficients : ', lasso_model.coef_)
+    print('Intercept : ', lasso_model.intercept_, '\n')
 
-        title_lasso = 'Lasso Test Results, C=' + str(c)
+    title_lasso = 'Lasso Test Results, C=' + str(np.log10(cValueToUse))
 
-        # Send Lasso Model to plot function for each value of C
-        plotRegressionModel(lasso_model, polynomial_deg, title_lasso)
+    # Send Lasso Model to plot function for each value of C
+    plotRegressionModel(lasso_model, polynomial_deg, title_lasso)
 
 
 # ----------------------------------------------- Ridge Regression -----------------------------------------------
-# Same as above but with Ridge Regression rather than Lasso Regression
-# Creates Ridge Regression Models
-def trainRidgeRegressionModel():
-    X_train, X_test, y_train, y_test = train_test_split(features, targets, test_size=0.20)
-    polynomial_deg = PolynomialFeatures(degree=5)
-    polynomial_features = polynomial_deg.fit_transform(X_train)
-
-    c_arr = [1, 10, 1000]
+# Preform kFold for 5 splits for Ridge Regression
+# Vary C value (0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10)
+# Plot graph to analyse the data
+def ridge5FoldCrossValidationForC(degreeToUse):
+    polynomial_deg = PolynomialFeatures(degree=degreeToUse)
+    standard_devs = []
+    means = []
+    c_arr = [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10]
     for c in c_arr:
         penalty = 1 / (2 * c)
         ridge_model = Ridge(alpha=penalty)
-        ridge_model.fit(polynomial_features, y_train)
-        print('Ridge Regression, C=', c)
-        print('Coefficients : ', ridge_model.coef_)
-        print('Intercept : ', ridge_model.intercept_, '\n')
+        five_fold = KFold(n_splits=5, shuffle=False)
+        estimates_mean_sq_err = []
 
-        title_ridge = 'Ridge Test Results, C=' + str(c)
+        for train_index, test_index in five_fold.split(features):
+            X_train, X_test, y_train, y_test = features[train_index], features[test_index], targets[train_index], targets[test_index]
+            polynomial_features = polynomial_deg.fit_transform(X_train)
+            ridge_model.fit(polynomial_features, y_train)
+            polynomial_Xtest = polynomial_deg.fit_transform(X_test)
+            y_pred = ridge_model.predict(polynomial_Xtest)
+            estimates_mean_sq_err.append(mean_squared_error(y_test, y_pred))
 
-        # Send Lasso Model to plot function for each value of C
-        plotRegressionModel(ridge_model, polynomial_deg, title_ridge)
+        means.append(np.mean(estimates_mean_sq_err))
+        standard_devs.append(np.std(estimates_mean_sq_err))
+
+    plt.errorbar(np.log10(c_arr), means, yerr=standard_devs, ecolor='r', linewidth=2, capsize=5)
+    plt.title('5 Fold Ridge with various C values')
+    plt.xlabel('log10(C)');
+    plt.ylabel('Mean (blue) / Standard Deviation (red)')
+    plt.show()
+
+# K Fold Regression to get maximum order of polynomial to use
+# Plot graph to analyse the data
+def ridge5FoldCrossValidationForDegree(cValueToUse):
+    penalty = 1 / (2 * cValueToUse)
+    ridge_model = Ridge(alpha=penalty)
+    five_fold = KFold(n_splits=5, shuffle=False)
+    estimates_mean_sq_err = []
+    standard_devs = []
+    means = []
+    poly_vals = [1, 2, 3, 4, 5, 6, 7]
+    for d in poly_vals:
+        polynomial_deg = PolynomialFeatures(degree=d)
+        for train_index, test_index in five_fold.split(targets):
+            X_train, X_test, y_train, y_test = features[train_index], features[test_index], targets[train_index], targets[test_index]
+            polynomial_features = polynomial_deg.fit_transform(X_train)
+            ridge_model.fit(polynomial_features, y_train)
+            polynomial_Xtest = polynomial_deg.fit_transform(X_test)
+            y_pred = ridge_model.predict(polynomial_Xtest)
+            estimates_mean_sq_err.append(mean_squared_error(y_test, y_pred))
+
+        means.append(np.mean(estimates_mean_sq_err))
+        standard_devs.append(np.std(estimates_mean_sq_err))
+
+    plt.errorbar(poly_vals, means, yerr=standard_devs, ecolor='r', linewidth=2, capsize=5)
+    plt.title('5 Fold Ridge with Various Polynomial Degrees')
+    plt.xlabel('Polynomial Degrees');
+    plt.ylabel('Mean (blue) / Standard Deviation (red)')
+    plt.show()
+
+# Same as above but with Ridge Regression rather than Lasso Regression
+# Create Ridge Regression Model
+def trainRidgeRegressionModel(degreeToUse, cValueToUse):
+    X_train, X_test, y_train, y_test = train_test_split(features, targets, test_size=0.20)
+
+    # Use polynomial feature degree value determined during cross-validation
+    polynomial_deg = PolynomialFeatures(degree=degreeToUse)
+    polynomial_features = polynomial_deg.fit_transform(X_train)
+
+    # Use C value determined during cross-validation
+    penalty = 1 / (2 * cValueToUse)
+    ridge_model = Ridge(alpha=penalty)
+    ridge_model.fit(polynomial_features, y_train)
+    print('Ridge Regression, C=', np.log10(cValueToUse))
+    print('Coefficients : ', ridge_model.coef_)
+    print('Intercept : ', ridge_model.intercept_, '\n')
+
+    title_ridge = 'Ridge Test Results, C=' + str(np.log10(cValueToUse))
+
+    # Send Lasso Model to plot function for each value of C
+    plotRegressionModel(ridge_model, polynomial_deg, title_ridge)
 
 
 # ----------------------------------------------- Regression Model Helper Functions -----------------------------------------------
 # Plot the Regression Model
-def plotRegressionModel(lasso_model, polynomial_deg, title):
+def plotRegressionModel(model, polynomial_deg, title):
     Xtest = test_space()
 
     polynomial_Xtest = polynomial_deg.fit_transform(Xtest)
-    y_pred = lasso_model.predict(polynomial_Xtest)
+    y_pred = model.predict(polynomial_Xtest)
 
     graph_surface(y_pred, title)
 
@@ -202,12 +343,34 @@ if __name__ == "__main__":
 
     # Convert courses to seperate arrays
     convertToSeperateArrays(courses)
+    displayOriginalData()
 
     # 3D Scatter Plot of the data
     threeDScatterPlot()
 
+    #Log10(C) Legend:
+        #C = 0.000000001 converted to log10(0.000000001)= -9
+        #C = 0.00000001 converted to log10(0.00000001) 	= -8
+        #C = 0.0000001 converted to log10(0.0000001) 	= -7
+        #C = 0.000001 converted to log10(0.000001) 	    = -6
+        #C = 0.00001 converted to log10(0.00001) 	    = -5
+        #C = 0.0001 converted to log10(0.0001) 	        = -4
+        #C = 0.001 converted to log10(0.001) 		    = -3
+        #C = 0.01 converted to log10(0.01) 		        = -2
+        #C = 0.1 converted to log10(0.1) 		        = -1
+        #C = 1 converted to log10(1) 			        = 0
+        #C = 10 converted to log10(10) 		            = 1
+
     # Lasso Regression
-    trainLassoRegressionModel()
+    degreeToUse = 5
+    cValueToUse = 0.001
+    lasso5FoldCrossValidationForC(degreeToUse)
+    lasso5FoldCrossValidationForDegree(cValueToUse)
+    trainLassoRegressionModel(degreeToUse, cValueToUse)
 
     # Ridge Regression
-    trainRidgeRegressionModel()
+    degreeToUse = 6
+    cValueToUse = 0.000001
+    ridge5FoldCrossValidationForC(degreeToUse)
+    ridge5FoldCrossValidationForDegree(cValueToUse)
+    trainRidgeRegressionModel(degreeToUse, cValueToUse)
