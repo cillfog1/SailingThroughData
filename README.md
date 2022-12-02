@@ -3,6 +3,7 @@
 ### Machine Learning Group Project
 ## Group • : Cillian Fogarty, Enda Healion, Delia McGrath
 
+[current doc](https://docs.google.com/document/d/1eCUi-44o90UOt2Nb74XSicILDHuxyJOg/edit?usp=sharing&ouid=117265107572078183762&rtpof=true&sd=true)
 
 <!-- Table of Contents -->
 <details open="open">
