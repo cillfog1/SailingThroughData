@@ -132,8 +132,8 @@ def threeDScatterPlot():
 # Preform kFold for 5 splits for Lasso Regression
 # Vary C value (0.000000001, 0.00000001, 0.0000001, 0.000001, 0.00001, 0.0001, 0.001)
 # Plot graph to analyse the data
-def lasso5FoldCrossValidationForC():
-    polynomial_deg = PolynomialFeatures(degree=5)
+def lasso5FoldCrossValidationForC(degreeToUse):
+    polynomial_deg = PolynomialFeatures(degree=degreeToUse)
     standard_devs = []
     means = []
     c_arr = [0.000000001, 0.00000001, 0.0000001, 0.000001, 0.00001, 0.0001, 0.001]
@@ -215,8 +215,8 @@ def trainLassoRegressionModel(degreeToUse, cValueToUse):
 # Preform kFold for 5 splits for Ridge Regression
 # Vary C value (0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10)
 # Plot graph to analyse the data
-def ridge5FoldCrossValidationForC():
-    polynomial_deg = PolynomialFeatures(degree=5)
+def ridge5FoldCrossValidationForC(degreeToUse):
+    polynomial_deg = PolynomialFeatures(degree=degreeToUse)
     standard_devs = []
     means = []
     c_arr = [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10]
@@ -240,6 +240,35 @@ def ridge5FoldCrossValidationForC():
     plt.errorbar(np.log10(c_arr), means, yerr=standard_devs, ecolor='r', linewidth=2, capsize=5)
     plt.title('5 Fold Ridge with various C values')
     plt.xlabel('log10(C)');
+    plt.ylabel('Mean (blue) / Standard Deviation (red)')
+    plt.show()
+
+# K Fold Regression to get maximum order of polynomial to use
+# Plot graph to analyse the data
+def ridge5FoldCrossValidationForDegree(cValueToUse):
+    penalty = 1 / (2 * cValueToUse)
+    ridge_model = Ridge(alpha=penalty)
+    five_fold = KFold(n_splits=5, shuffle=False)
+    estimates_mean_sq_err = []
+    standard_devs = []
+    means = []
+    poly_vals = [1, 2, 3, 4, 5, 6, 7]
+    for d in poly_vals:
+        polynomial_deg = PolynomialFeatures(degree=d)
+        for train_index, test_index in five_fold.split(targets):
+            X_train, X_test, y_train, y_test = features[train_index], features[test_index], targets[train_index], targets[test_index]
+            polynomial_features = polynomial_deg.fit_transform(X_train)
+            ridge_model.fit(polynomial_features, y_train)
+            polynomial_Xtest = polynomial_deg.fit_transform(X_test)
+            y_pred = ridge_model.predict(polynomial_Xtest)
+            estimates_mean_sq_err.append(mean_squared_error(y_test, y_pred))
+
+        means.append(np.mean(estimates_mean_sq_err))
+        standard_devs.append(np.std(estimates_mean_sq_err))
+
+    plt.errorbar(poly_vals, means, yerr=standard_devs, ecolor='r', linewidth=2, capsize=5)
+    plt.title('5 Fold Ridge with Various Polynomial Degrees')
+    plt.xlabel('Polynomial Degrees');
     plt.ylabel('Mean (blue) / Standard Deviation (red)')
     plt.show()
 
@@ -314,10 +343,10 @@ if __name__ == "__main__":
 
     # Convert courses to seperate arrays
     convertToSeperateArrays(courses)
-    #displayOriginalData()
+    displayOriginalData()
 
     # 3D Scatter Plot of the data
-    #threeDScatterPlot()
+    threeDScatterPlot()
 
     #Log10(C) Legend:
         #C = 0.000000001 converted to log10(0.000000001)= -9
@@ -333,14 +362,15 @@ if __name__ == "__main__":
         #C = 10 converted to log10(10) 		            = 1
 
     # Lasso Regression
-    #lasso5FoldCrossValidationForC()
-    cValueToUse = 0.001
-    lasso5FoldCrossValidationForDegree(cValueToUse)
     degreeToUse = 5
-    #trainLassoRegressionModel(degreeToUse, cValueToUse)
+    cValueToUse = 0.001
+    lasso5FoldCrossValidationForC(degreeToUse)
+    lasso5FoldCrossValidationForDegree(cValueToUse)
+    trainLassoRegressionModel(degreeToUse, cValueToUse)
 
     # Ridge Regression
-    #ridge5FoldCrossValidationForC()
-    degreeToUse = 5
+    degreeToUse = 6
     cValueToUse = 0.000001
-    #trainRidgeRegressionModel(degreeToUse, cValueToUse)
+    ridge5FoldCrossValidationForC(degreeToUse)
+    ridge5FoldCrossValidationForDegree(cValueToUse)
+    trainRidgeRegressionModel(degreeToUse, cValueToUse)
