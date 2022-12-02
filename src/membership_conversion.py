@@ -301,6 +301,43 @@ def KFolds_C_penalty(dataset):
     #plt.clf()
     plt.show()
 
+def generate_confusion_matrix(dataset):
+    best_q = 1
+    best_c = 0.5
+
+    train_set, test_set = train_test_split(dataset, test_size=0.2)
+    x_train = np.column_stack((train_set.iloc[:,0], train_set.iloc[:,1]))
+    y_train = train_set.iloc[:,2]
+    x_test  = np.column_stack((test_set.iloc[:,0], test_set.iloc[:,1]))
+    y_test  = test_set.iloc[:,2]
+
+    # Calculate the confusion matrices for your trained Logistic Regression
+    x_poly_train = PolynomialFeatures(best_q).fit_transform(x_train)
+    x_poly_test  = PolynomialFeatures(best_q).fit_transform(x_test)
+    model = LogisticRegression(penalty='l2', solver='lbfgs', C=best_c)
+    model.fit(x_poly_train, y_train)
+    y_pred = model.predict(x_poly_test)
+    tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+    print("Confustion Matrix: Logistic Regression")
+    print("[TP, FP]: [", tp, ", ", fp, "]")
+    print("[FN, TN]: [", fn, ", ", tn, "]")
+
+def compare_most_frequent(dataset):
+    train_set, test_set = train_test_split(dataset, test_size=0.2)
+    x_train = np.column_stack((train_set.iloc[:,0], train_set.iloc[:,1]))
+    y_train = train_set.iloc[:,2]
+    x_test  = np.column_stack((test_set.iloc[:,0], test_set.iloc[:,1]))
+    y_test  = test_set.iloc[:,2]
+
+    # Also calculate the confusion matrix for one ore more baseline classifier.
+    dummy = DummyClassifier(strategy='most_frequent').fit(x_train, y_train)
+    y_pred = dummy.predict(x_test)
+    tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+    print("Confustion Matrix: Dummy(Most Frequent)")
+    print("[TP, FP]: [", tp, ", ", fp, "]")
+    print("[FN, TN]: [", fn, ", ", tn, "]")
+    print()
+
 
 # ----------------------------------------------- Plot Feature Visualisation -----------------------------------------------
 def normaliseData(X):
@@ -343,6 +380,7 @@ def displayOriginalData(dataset):
     plt.tight_layout()
     plt.show()
 
+
 def course_count_data(r):
     data = []
     for _ in range(r):
@@ -380,4 +418,6 @@ if __name__ == "__main__":
 
     KFolds_polynomial_features(dataset)
     KFolds_C_penalty(dataset)
+    generate_confusion_matrix(dataset)
+    compare_most_frequent(dataset)
 
