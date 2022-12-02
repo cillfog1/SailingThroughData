@@ -297,11 +297,11 @@ def trainRidgeRegressionModel(degreeToUse, cValueToUse):
 
 # ----------------------------------------------- Regression Model Helper Functions -----------------------------------------------
 # Plot the Regression Model
-def plotRegressionModel(lasso_model, polynomial_deg, title):
+def plotRegressionModel(model, polynomial_deg, title):
     Xtest = test_space()
 
     polynomial_Xtest = polynomial_deg.fit_transform(Xtest)
-    y_pred = lasso_model.predict(polynomial_Xtest)
+    y_pred = model.predict(polynomial_Xtest)
 
     graph_surface(y_pred, title)
 
