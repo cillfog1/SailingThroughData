@@ -93,6 +93,25 @@ def convertToSeperateArrays(courses):
     features = np.column_stack((course_level_type, course_startDate))
     targets = np.array(course_numOfMembers)
 
+# ----------------------------------------------- Plot Feature Visualisation -----------------------------------------------
+def normaliseData(X):
+    shift = np.average(X)
+    scalingFactor = np.max(X) - np.min(X)
+    X = (X-shift) / scalingFactor
+    return X
+
+def displayOriginalData():
+    feature1= normaliseData(features[:, 0])
+    feature2 = normaliseData(features[:,1])
+    target = normaliseData(targets)
+    
+    plt.scatter(feature1, target, c='g', marker='+', label="Feature = course_type.course_level")
+    plt.scatter(feature2, target, c='b', marker='o', label="Feature = course_startDate")
+    plt.title("Dataset Visualisation")
+    plt.legend(scatterpoints = 1, fontsize=10)
+    plt.xlabel("Feature")
+    plt.ylabel("Target")
+    plt.show();
 
 # ----------------------------------------------- 3D Scatter Plot Data -----------------------------------------------
 def threeDScatterPlot():
@@ -264,6 +283,7 @@ if __name__ == "__main__":
 
     # Convert courses to seperate arrays
     convertToSeperateArrays(courses)
+    displayOriginalData()
 
     # 3D Scatter Plot of the data
     #threeDScatterPlot()
