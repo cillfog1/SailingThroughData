@@ -149,12 +149,8 @@ def noramlise(X):
     X = (X-shift) / scalingFactor
     return X
 
-def data_to_numpy_dataset(data):
-    course_counts      = noramlise(list(data.course_counts))
-    swimming_abilities = noramlise(list(data.swimming_abilities))
-    sailing_certs      = noramlise(list(data.sailing_certs))
-    is_member_labels   = list(data.labels)
-    dataframe = pd.DataFrame(list(zip(course_counts, swimming_abilities, sailing_certs, is_member_labels)), columns =['Course Count', 'Swimming Ability', 'Sailing Cert', 'Member'])
+def data_to_numpy_dataset(course_count_data, ability_data, is_member):
+    dataframe = pd.DataFrame(list(zip(course_count_data, ability_data, is_member)), columns =['Course Count', 'Swimming Ability', 'Member'])
     return dataframe
 
 def load_csv_files():
@@ -243,9 +239,7 @@ def KFolds_polynomial_features(dataset):
     course_counts      = dataset.iloc[:,0]
     swimming_abilities = dataset.iloc[:,1]
     X = np.column_stack((course_counts, swimming_abilities))
-    y = dataset.iloc[:,3]
-
-    # i) Use cross-validation to select the maximum order of polynomial to use.
+    y = dataset.iloc[:,2]
     # Steps: 1. For a number of polynomial values [1, 2, 3, 4, 5, 6]:
     #        2. Generate the polynomial data and the model.
     #        3. Do k-fold cross-validation for some k value, like 5.
@@ -276,6 +270,37 @@ def KFolds_polynomial_features(dataset):
     #plt.savefig(fig_name)
     #plt.clf()
     plt.show()
+
+def KFolds_C_penalty(dataset):
+    # Steps: 1. For a number of C values [0.05, 0.1, 0.5, 1, 5, 10, 50] generate a model.
+    #        2. Do k-fold cross validaiton and fit the model to get the F1-score.
+    #        2. Plot distribution of prediction error.
+    #        3. Choose the lowest C value that stil gives good results.
+    # When doing cross-validation, k-folds, we want the smallest C value that still produces good results.
+    # This is because we want our model to be as simple as possible so that it is not over-fitted on the training data set.
+    course_counts      = dataset.iloc[:,0]
+    swimming_abilities = dataset.iloc[:,1]
+    X = np.column_stack((course_counts, swimming_abilities))
+    y = dataset.iloc[:,2]
+    c_range = [0.001, 0.05, 0.1, 0.5, 1, 5, 10, 20]
+    c_mean_f1 = []
+    c_std_error = []
+    for c in c_range:
+        x_poly = PolynomialFeatures(1).fit_transform(X)
+        model = LogisticRegression(penalty='l2', solver='lbfgs', C=c)
+        scores = cross_val_score(model, x_poly, y, cv=5, scoring='f1')
+        c_mean_f1.append(np.array(scores).mean())
+        c_std_error.append(np.array(scores).std())
+
+    plt.errorbar(c_range, c_mean_f1, yerr=c_std_error, linewidth=3)
+    plt.title('Plot of c hyperparameter vs. mean F1-score of the model')
+    plt.xlabel('c')
+    plt.ylabel('Mean F1 score')
+    #fig_name = 'kfolds_c_i.png' if first else 'kfold_c_ii.png'
+    #plt.savefig(fig_name)
+    #plt.clf()
+    plt.show()
+
 
 # ----------------------------------------------- Plot Feature Visualisation -----------------------------------------------
 def normaliseData(X):
@@ -328,7 +353,7 @@ def course_count_data(r):
 
 def ability_data(r, c):
     data = []
-    gen = np.arange(-1, 1, 1 / r)
+    gen = np.arange(-1, 1, 1 / 3)
     for i in range(r):
         for _ in range(c):
             data.append(gen[i])
@@ -337,35 +362,22 @@ def ability_data(r, c):
 
 if __name__ == "__main__":
     csv_files = load_csv_files()
-    data = generate_data("2020", csv_files)
-    dataset = data_to_numpy_dataset(data)
-    #graph_data(dataset)
-    #displayOriginalData(dataset)
+    #data = generate_data("2020", csv_files)
 
-    course_counts      = dataset.iloc[:,0]
-    swimming_abilities = dataset.iloc[:,1]
-    sailing_certs      = dataset.iloc[:,2]
-    is_member          = dataset.iloc[:,3]
+    is_member = np.array([0, 0, 0, 0, 0, 0, 0, 0,
+                          1, 0, 0, 0, 0, 0, 0, 0,
+                          1, 1, 1, 0, 0, 0, 0, 0,
+                          1, 1, 1, 1, 1, 1, 0, 0,
+                          1, 1, 1, 1, 1, 1, 1, 1,
+                          1, 1, 1, 1, 1, 1, 1, 1])
 
-    print(course_counts)
+    course_count_data = np.array(course_count_data(8))
+    ability_data = np.array(ability_data(6, 8))
 
-    #graph_2D_data(course_counts, swimming_abilities, is_member, 'Course Count', 'Swimming Ability')
+    graph_2D_data(course_count_data, ability_data, is_member, 'Course Count', 'Swimming Ability')
 
-    #KFolds_polynomial_features(dataset)
+    dataset = data_to_numpy_dataset(course_count_data, ability_data, is_member)
 
-    is_member = [0, 0, 0, 0, 0, 0, 0, 0,
-                 1, 0, 0, 0, 0, 0, 0, 0,
-                 1, 1, 1, 0, 0, 0, 0, 0,
-                 1, 1, 1, 1, 1, 1, 0, 0,
-                 1, 1, 1, 1, 1, 1, 1, 1,
-                 1, 1, 1, 1, 1, 1, 1, 1]
-
-    course_count_data = course_count_data(8)
-    ability_data = ability_data(6, 8)
-
-    #print(is_member)
-    #print(ability_data)
-    print(course_count_data)
-
-    graph_2D_data(np.array(course_count_data), np.array(ability_data), np.array(is_member), 'Course Count', 'Swimming Ability')
+    KFolds_polynomial_features(dataset)
+    KFolds_C_penalty(dataset)
 
