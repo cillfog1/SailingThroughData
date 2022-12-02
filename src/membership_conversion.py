@@ -196,7 +196,6 @@ def generate_scatter_marker_size(data):
                     count += 1
             counts_swimming_sizes[c-1][s] = count
 
-
     for c in count_values:
         for s in sailing_values:
             count = 0
@@ -319,19 +318,54 @@ def displayOriginalData(dataset):
     plt.tight_layout()
     plt.show()
 
+def course_count_data(r):
+    data = []
+    for _ in range(r):
+        gen = np.arange(-1, 1, 1 / 4)
+        for g in gen:
+            data.append(g)
+    return data
+
+def ability_data(r, c):
+    data = []
+    gen = np.arange(-1, 1, 1 / r)
+    for i in range(r):
+        for _ in range(c):
+            data.append(gen[i])
+    return data
+
+
 if __name__ == "__main__":
     csv_files = load_csv_files()
     data = generate_data("2020", csv_files)
     dataset = data_to_numpy_dataset(data)
     #graph_data(dataset)
-    displayOriginalData(dataset)
+    #displayOriginalData(dataset)
 
     course_counts      = dataset.iloc[:,0]
     swimming_abilities = dataset.iloc[:,1]
     sailing_certs      = dataset.iloc[:,2]
     is_member          = dataset.iloc[:,3]
 
-    graph_2D_data(course_counts, swimming_abilities, is_member, 'Course Count', 'Swimming Ability')
+    print(course_counts)
 
-    KFolds_polynomial_features(dataset)
+    #graph_2D_data(course_counts, swimming_abilities, is_member, 'Course Count', 'Swimming Ability')
+
+    #KFolds_polynomial_features(dataset)
+
+    is_member = [0, 0, 0, 0, 0, 0, 0, 0,
+                 1, 0, 0, 0, 0, 0, 0, 0,
+                 1, 1, 1, 0, 0, 0, 0, 0,
+                 1, 1, 1, 1, 1, 1, 0, 0,
+                 1, 1, 1, 1, 1, 1, 1, 1,
+                 1, 1, 1, 1, 1, 1, 1, 1]
+
+    course_count_data = course_count_data(8)
+    ability_data = ability_data(6, 8)
+
+    #print(is_member)
+    #print(ability_data)
+    print(course_count_data)
+
+    graph_2D_data(np.array(course_count_data), np.array(ability_data), np.array(is_member), 'Course Count', 'Swimming Ability')
 
