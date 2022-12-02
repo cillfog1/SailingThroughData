@@ -237,6 +237,45 @@ def graph_3D_data(x1, x2, x3, y):
     ax.set_ylabel('Swimming Ability')
     ax.set_zlabel('Sailing Cert')
     plt.title('3D Scatter Plot of Data')
+
+def KFolds_polynomial_features(dataset):
+    # Using sklearn augment the two features in the dataset with polynomial features
+    # and train a Logistic Regression classifier with L2 penalty added to the cost function.
+    course_counts      = dataset.iloc[:,0]
+    swimming_abilities = dataset.iloc[:,1]
+    X = np.column_stack((course_counts, swimming_abilities))
+    y = dataset.iloc[:,3]
+
+    # i) Use cross-validation to select the maximum order of polynomial to use.
+    # Steps: 1. For a number of polynomial values [1, 2, 3, 4, 5, 6]:
+    #        2. Generate the polynomial data and the model.
+    #        3. Do k-fold cross-validation for some k value, like 5.
+    #        4. Train the model and get the F1-score.
+    #        5. Choosing q too small or too large increases the prediction error on the test data but not on the training data.
+    k_fold = KFold(n_splits=5)
+    q_range = [1, 2, 3, 4, 5, 6]
+    q_mean_f1 = []
+    q_std_error = []
+    for q in q_range:
+        x_poly = PolynomialFeatures(q).fit_transform(X)
+        # NOTE: I choose l2 becaues I never want the model to fully zero out any inputs.
+        model = LogisticRegression(penalty='l2', solver='lbfgs')
+        f1_score_buffer = []
+        for train, test in k_fold.split(x_poly):
+            model.fit(x_poly[train], y[train])
+            y_pred = model.predict(x_poly[test])
+            score = f1_score(y_true=y[test], y_pred=y_pred)
+            f1_score_buffer.append(score)
+        q_mean_f1.append(np.array(f1_score_buffer).mean())
+        q_std_error.append(np.array(f1_score_buffer).std())
+
+    plt.errorbar(q_range, q_mean_f1, yerr=q_std_error, linewidth=3)
+    plt.xlabel('q')
+    plt.title('Plot of maximum polynomial features(q), vs. mean F1-score of the model')
+    plt.ylabel('Mean F1 score')
+    #fig_name = 'kfolds_poly_i.png' if first else 'kfolds_poly_ii.png'
+    #plt.savefig(fig_name)
+    #plt.clf()
     plt.show()
 
 # ----------------------------------------------- Plot Feature Visualisation -----------------------------------------------
@@ -247,7 +286,6 @@ def normaliseData(X):
     return X
 
 def displayOriginalData(dataset):
-  
     fig = plt.figure()
     ax1 = plt.subplot(131)
     ax2 = plt.subplot(132)
@@ -285,7 +323,7 @@ if __name__ == "__main__":
     csv_files = load_csv_files()
     data = generate_data("2020", csv_files)
     dataset = data_to_numpy_dataset(data)
-    graph_data(dataset)
+    #graph_data(dataset)
     displayOriginalData(dataset)
 
     course_counts      = dataset.iloc[:,0]
